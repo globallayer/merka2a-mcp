@@ -104,3 +104,16 @@ your own agent key.
 ## License
 
 MIT
+
+<!-- mirror-notice -->
+## About this repository
+
+This is the public, auto-synced mirror of the official Merka2a MCP server. Install the published package directly — no build required:
+
+```bash
+npx -y @merk.a2a/mcp-server
+```
+
+- npm: [`@merk.a2a/mcp-server`](https://www.npmjs.com/package/@merk.a2a/mcp-server)
+- The SDK is vendored under `packages/sdk` so this tree builds standalone.
+- Kept in sync automatically from the source repository.
