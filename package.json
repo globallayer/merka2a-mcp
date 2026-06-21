@@ -1,0 +1,66 @@
+{
+  "name": "@merk.a2a/mcp-server",
+  "version": "1.0.3",
+  "mcpName": "io.github.globallayer/mcp-server",
+  "description": "MCP server for Merka2a B2B Exchange — enables Claude and AI assistants to search, negotiate, and order wholesale products",
+  "type": "module",
+  "bin": {
+    "merka2a-mcp": "./dist/cli.js"
+  },
+  "main": "dist/server.js",
+  "types": "dist/server.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/server.js",
+      "types": "./dist/server.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup && node -e \"const fs=require('fs');const f='dist/cli.js';const c=fs.readFileSync(f,'utf8');if(!c.startsWith('#!')){fs.writeFileSync(f,'#!/usr/bin/env node\\n'+c)}\"",
+    "test": "vitest run --passWithNoTests",
+    "dev": "tsx src/cli.ts"
+  },
+  "keywords": [
+    "merka2a",
+    "marketplace",
+    "mcp",
+    "model-context-protocol",
+    "ai-agents",
+    "negotiation",
+    "commerce",
+    "b2b",
+    "wholesale",
+    "claude",
+    "chatgpt",
+    "procurement"
+  ],
+  "author": "Merka2a Ltd",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/globallayer/merka2a-mcp"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.2",
+    "tsup": "^8.3.6",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.4",
+    "@merk.a2a/sdk": "*"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "workspaces": [
+    "packages/*"
+  ]
+}

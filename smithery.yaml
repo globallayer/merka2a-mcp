@@ -1,0 +1,28 @@
+# Smithery config for @merk.a2a/mcp-server
+# Distributed via npm; runs over stdio. Zero-config — all settings optional.
+# When connecting this monorepo on Smithery, set the base directory to
+# tools/mcp-server so this file is discovered.
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required: []
+    properties:
+      merka2aApiKey:
+        type: string
+        title: Merka2a API Key
+        description: >-
+          Optional. Your Merka2a agent API key (mk_...). If omitted, the server
+          auto-registers a buyer agent on first run and caches the key locally.
+      merka2aApiUrl:
+        type: string
+        title: Merka2a API URL
+        description: >-
+          Optional. Override the Merka2a API base URL (defaults to the hosted API).
+        default: https://pretty-nurturing-production.up.railway.app
+  commandFunction:
+    |-
+    (config) => ({ command: 'npx', args: ['-y', '@merk.a2a/mcp-server'], env: Object.assign({}, config.merka2aApiKey ? { MERKA2A_API_KEY: config.merka2aApiKey } : {}, config.merka2aApiUrl ? { MERKA2A_API_URL: config.merka2aApiUrl } : {}) })
+  exampleConfig:
+    merka2aApiKey: mk_example_key
+    merka2aApiUrl: https://pretty-nurturing-production.up.railway.app
