@@ -41,6 +41,10 @@
   ],
   "author": "Merka2a Ltd",
   "license": "MIT",
+  "homepage": "https://merka2a.com",
+  "bugs": {
+    "url": "https://github.com/globallayer/merka2a-mcp/issues"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/globallayer/merka2a-mcp"
