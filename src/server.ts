@@ -16,7 +16,7 @@ export async function createServer(): Promise<McpServer> {
     version: '0.1.0',
   })
 
-  const client = await createAuthenticatedClient()
+  const client = createAuthenticatedClient()
 
   // Register tools (11 total)
   registerSearchTools(server, client)       // search_products, browse_categories
