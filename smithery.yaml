@@ -1,7 +1,10 @@
-# Smithery config for @merk.a2a/mcp-server
-# Distributed via npm; runs over stdio. Zero-config — all settings optional.
-# When connecting this monorepo on Smithery, set the base directory to
-# tools/mcp-server so this file is discovered.
+# Smithery STDIO config for @merk.a2a/mcp-server (npm / npx distribution).
+# This documents the local stdio invocation only.
+#
+# For the HOSTED (scannable) Smithery deployment, use the root-level
+# smithery.yaml (runtime: container) — connect this repo with the base
+# directory set to the repo root, NOT tools/mcp-server. A stdio config like
+# this one cannot be scanned, which is why the prior listing stayed empty.
 startCommand:
   type: stdio
   configSchema:
