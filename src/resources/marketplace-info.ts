@@ -47,9 +47,17 @@ Merka2a is a neutral interchange layer for AI commerce agents. It allows buyer a
 ## How It Works
 
 1. **Search** — Use \`search_products\` with a category and optional filters (budget, brand, specs, delivery requirements)
-2. **Negotiate** — If an offer is negotiable, use \`start_negotiation\` with your target price. The seller's automated rules respond instantly.
-3. **Order** — Use \`place_order\` to purchase. Reference a negotiation session ID to get the negotiated price.
+2. **Negotiate** — If an offer is negotiable, use \`start_negotiation\` with your target price. An automated rules engine (not a human seller, and not the distributor) generates the response instantly.
+3. **Order** — Use \`place_order\` to record an order. Reference a negotiation session ID to get the negotiated price.
 4. **Track** — Use \`check_order\` and \`list_orders\` to monitor order status.
+
+## Order Fulfillment (read before ordering)
+
+Merka2a is an **aggregator**: products are pulled from distributors such as Mouser and Digi-Key. When you place an order, it is **recorded** (status \`created\`) and then **fulfilled manually** by a Merka2a operator who places the real order with the distributor and ships to you. Expect **1–5 business days** depending on distributor availability.
+
+- **No automatic acceptance / ETA.** The order does not auto-confirm; status advances as the operator processes it. Poll \`check_order\` — \`sourceOrderStatus\` and tracking appear there once the operator acts.
+- **Payment is handled separately.** Funds are not captured at order time (Stripe is currently paused).
+- **Minimum order quantity (MOQ) is enforced.** Orders below a part's MOQ (e.g. reel/pack quantities from the distributor) are rejected at \`place_order\` with a clear error.
 
 ## Key Concepts
 

@@ -55,11 +55,49 @@ export function formatNegotiationSession(session: any): string {
   return lines.join('\n')
 }
 
+/**
+ * Human-readable explanation of what an order status means and what happens
+ * next. Merka2a fulfils aggregated-distributor orders manually, so a bare
+ * `created` status is opaque without this context.
+ */
+export function orderStatusMessage(order: any): string {
+  switch (order.status) {
+    case 'created':
+      return 'Recorded — awaiting operator confirmation. Aggregated-distributor orders (Mouser/Digi-Key) are placed manually by a Merka2a operator, typically within 1–5 business days. There is no automatic acceptance or ETA yet, and payment is handled separately (not captured at this step). Poll `check_order` for updates.'
+    case 'payment-pending':
+      return 'Payment is required to proceed. Payment is handled manually for now.'
+    case 'payment-captured':
+      return 'Payment received. The operator will place the source order with the distributor shortly.'
+    case 'confirmed':
+      return 'Source order placed with the distributor. Awaiting shipment.'
+    case 'shipped':
+      return 'In transit. See tracking details below.'
+    case 'delivered':
+      return 'Delivered.'
+    case 'cancelled':
+      return 'This order was cancelled.'
+    case 'refunded':
+      return 'This order was refunded.'
+    default:
+      return `Current status: ${order.status}.`
+  }
+}
+
 export function formatOrder(order: any): string {
   const lines = [
     `## Order \`${order.id}\``,
     `- **Status:** ${order.status}`,
+    `- **Status note:** ${orderStatusMessage(order)}`,
   ]
+  if (order.sourceOrderStatus) {
+    lines.push(`- **Fulfilment (distributor):** ${order.sourceOrderStatus}`)
+  }
+  if (order.sourceTrackingNumber) {
+    lines.push(`- **Tracking:** ${order.sourceTrackingNumber}${order.sourceCarrier ? ` (${order.sourceCarrier})` : ''}`)
+  }
+  if (order.estimatedDelivery) {
+    lines.push(`- **Estimated delivery:** ${order.estimatedDelivery}`)
+  }
   if (order.total ?? order.totalAmount) {
     const amount = order.total?.amount ?? order.totalAmount
     const currency = order.total?.currency ?? order.totalCurrency ?? 'GBP'

@@ -41,7 +41,10 @@ export function registerOrderTools(server: McpServer, client: Merka2aClient): vo
 
         return textContent(
           formatOrder(order) + '\n\n' +
-          `**Order placed successfully!** Track it with \`check_order\` using ID \`${order.id}\`.`
+          `**Order recorded** (status \`created\`). This does not yet mean it is accepted or paid. ` +
+          `Aggregated-distributor orders are fulfilled **manually** by a Merka2a operator (typically 1–5 business days); ` +
+          `there is no automatic acceptance, and payment is handled separately. ` +
+          `Poll \`check_order\` with ID \`${order.id}\` to follow fulfilment progress.`
         )
       }, 'Place Order')
     },

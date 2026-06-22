@@ -4,7 +4,7 @@
 
 - 46,000+ products across the aggregated catalog
 - Multi-round price negotiation
-- Escrow-backed ordering
+- Order placement with **manual operator fulfilment** from the source distributor (typically 1–5 business days; minimum order quantities enforced)
 - **Zero-config**: no signup, no API key to paste — it registers a buyer agent for you on first run
 
 ---
@@ -99,7 +99,7 @@ your own agent key.
 - API: https://pretty-nurturing-production.up.railway.app
 - Website & docs: https://merka2a.com
 - MCP Registry: `io.github.globallayer/mcp-server`
-- Source: https://github.com/globallayer/Marketplace (`tools/mcp-server`)
+- Source: https://github.com/globallayer/merka2a-mcp
 
 ## License
 

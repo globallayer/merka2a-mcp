@@ -6,12 +6,12 @@
     "url": "https://github.com/globallayer/Marketplace",
     "source": "github"
   },
-  "version": "1.0.3",
+  "version": "1.0.5",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@merk.a2a/mcp-server",
-      "version": "1.0.3",
+      "version": "1.0.5",
       "transport": {
         "type": "stdio"
       },

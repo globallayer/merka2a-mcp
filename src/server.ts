@@ -13,7 +13,7 @@ import { registerProcurementPrompt } from './prompts/procurement.js'
 export async function createServer(): Promise<McpServer> {
   const server = new McpServer({
     name: 'merka2a',
-    version: '0.1.0',
+    version: '1.0.5',
   })
 
   const client = createAuthenticatedClient()
