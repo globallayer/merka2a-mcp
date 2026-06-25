@@ -42,14 +42,22 @@ export function buildBuyerIntent(input: SearchInput): Record<string, unknown> {
     intent.condition = input.condition
   }
 
-  const requiredAttributes: Record<string, unknown> = {}
+  // Hardware filters map to structured electronicsConstraints, which the matching
+  // layer honours with the right semantics: manufacturer is matched exactly against
+  // the stored `manufacturer` string, and minRamGb/minStorageGb are numeric `>=`
+  // guards against `ramGb`/`storageGb`. (The previous shape — a `brand` array plus
+  // `minRamGb` inside requiredAttributes' `@>` containment — matched no product and
+  // always returned zero rows.)
+  const electronicsConstraints: Record<string, unknown> = {}
   if (input.brand) {
-    requiredAttributes.brand = Array.isArray(input.brand) ? input.brand : [input.brand]
+    electronicsConstraints.manufacturer = Array.isArray(input.brand) && input.brand.length === 1
+      ? input.brand[0]
+      : input.brand
   }
-  if (input.min_ram_gb != null) requiredAttributes.minRamGb = input.min_ram_gb
-  if (input.min_storage_gb != null) requiredAttributes.minStorageGb = input.min_storage_gb
-  if (Object.keys(requiredAttributes).length > 0) {
-    intent.requiredAttributes = requiredAttributes
+  if (input.min_ram_gb != null) electronicsConstraints.minRamGb = input.min_ram_gb
+  if (input.min_storage_gb != null) electronicsConstraints.minStorageGb = input.min_storage_gb
+  if (Object.keys(electronicsConstraints).length > 0) {
+    intent.electronicsConstraints = electronicsConstraints
   }
 
   if (input.max_delivery_days != null || input.destination_country) {
