@@ -4,12 +4,12 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 export function registerFindDealPrompt(server: McpServer): void {
   server.prompt(
     'find-deal',
-    'Guided workflow: search for a product, negotiate the best price, and place an order',
+    'Guided workflow: search for a compute offer, negotiate the best price, and place an order',
     {
       product: z.string()
-        .describe('What product are you looking for? e.g. "gaming laptop with 32GB RAM"'),
+        .describe('What compute are you looking for? e.g. "8x H100 80GB for training"'),
       budget: z.string().optional()
-        .describe('Maximum budget, e.g. "1500 GBP" or "under 2000"'),
+        .describe('Maximum budget, e.g. "5 USD/hr" or "under 10000"'),
       quantity: z.string().default('1')
         .describe('How many units? Default: 1'),
     },
@@ -25,8 +25,8 @@ export function registerFindDealPrompt(server: McpServer): void {
               quantity && quantity !== '1' ? `I need **${quantity} units**.` : '',
               '',
               'Please follow this workflow:',
-              '1. Search for matching products using `search_products`',
-              '2. Show me the top results with prices and key specs',
+              '1. Search for matching compute offers using `search_products`',
+              '2. Show me the top results with per-hour prices and key GPU specs',
               '3. If any offers are negotiable, recommend which to negotiate on and why',
               '4. Start a negotiation targeting 10-12% below listed price',
               '5. Continue negotiating (counter-offer) until we get a good deal or the seller stops',

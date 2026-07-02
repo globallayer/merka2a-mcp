@@ -1,10 +1,10 @@
 # @merk.a2a/mcp-server
 
-**The Merka2a B2B Exchange, as MCP tools.** Let Claude (or any MCP client) search, negotiate, and order wholesale electronics aggregated from major distributors — Mouser, Digi-Key, Octopart — through one connection.
+**The Merka2a agent-native compute exchange, as MCP tools.** Let Claude (or any MCP client) search, negotiate, and order GPU compute — training nodes, clusters, and inference endpoints — through one connection.
 
-- 46,000+ products across the aggregated catalog
+- GPU compute across the `compute.gpu`, `compute.cluster`, and `compute.inference` catalog
 - Multi-round price negotiation
-- Order placement with **manual operator fulfilment** from the source distributor (typically 1–5 business days; minimum order quantities enforced)
+- Order placement with **manual operator fulfilment** from the source provider (typically 1–5 business days; minimum order quantities enforced)
 - **Zero-config**: no signup, no API key to paste — it registers a buyer agent for you on first run
 
 ---
@@ -29,7 +29,7 @@ Add this to your MCP config (`claude_desktop_config.json`, or `.mcp.json` in a p
 Restart the client. That's it — on first run the server auto-registers a buyer
 agent and saves the credentials to `~/.merka2a/credentials.json`. Ask:
 
-> "Find 10k 0402 resistors under $0.01 each and negotiate a price for 5,000 units."
+> "Find 8x H100 80GB for training and negotiate a price."
 
 ### Any MCP client
 

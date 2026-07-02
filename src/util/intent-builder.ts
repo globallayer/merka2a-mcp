@@ -9,6 +9,13 @@ export interface SearchInput {
   quantity?: number
   condition?: string[]
   brand?: string | string[]
+  // Compute / GPU filters (active vertical)
+  gpu_model?: string | string[]
+  min_vram_gb?: number
+  min_gpu_count?: number
+  region?: string
+  max_price_per_hour?: number
+  // Electronics filters (shelved vertical — only wired when an electronics.* category is used)
   min_ram_gb?: number
   min_storage_gb?: number
   max_delivery_days?: number
@@ -18,9 +25,10 @@ export interface SearchInput {
 
 export function buildBuyerIntent(input: SearchInput): Record<string, unknown> {
   const currency = input.currency ?? 'GBP'
+  const category = input.category ?? inferCategory(input.query)
 
   const intent: Record<string, unknown> = {
-    category: input.category ?? inferCategory(input.query),
+    category,
     quantity: input.quantity ?? 1,
   }
 
@@ -42,22 +50,49 @@ export function buildBuyerIntent(input: SearchInput): Record<string, unknown> {
     intent.condition = input.condition
   }
 
-  // Hardware filters map to structured electronicsConstraints, which the matching
-  // layer honours with the right semantics: manufacturer is matched exactly against
-  // the stored `manufacturer` string, and minRamGb/minStorageGb are numeric `>=`
-  // guards against `ramGb`/`storageGb`. (The previous shape — a `brand` array plus
-  // `minRamGb` inside requiredAttributes' `@>` containment — matched no product and
-  // always returned zero rows.)
-  const electronicsConstraints: Record<string, unknown> = {}
-  if (input.brand) {
-    electronicsConstraints.manufacturer = Array.isArray(input.brand) && input.brand.length === 1
+  // Compute/GPU filters map to structured gpuComputeConstraints, whose keys the
+  // matching layer looks up via `attributes ->> KEY`: gpuModel/manufacturer are
+  // IN-list matches, minVramGb/minGpuCount are numeric `>=` guards, region is an
+  // exact match, maxPricePerHour caps the hourly offer price.
+  const gpuComputeConstraints: Record<string, unknown> = {}
+  if (input.gpu_model) {
+    gpuComputeConstraints.gpuModel = Array.isArray(input.gpu_model) && input.gpu_model.length === 1
+      ? input.gpu_model[0]
+      : input.gpu_model
+  }
+  if (input.min_vram_gb != null) gpuComputeConstraints.minVramGb = input.min_vram_gb
+  if (input.min_gpu_count != null) gpuComputeConstraints.minGpuCount = input.min_gpu_count
+  if (input.region) gpuComputeConstraints.region = input.region
+  // brand acts as GPU manufacturer in the compute vertical
+  if (input.brand && !isElectronicsCategory(category)) {
+    gpuComputeConstraints.manufacturer = Array.isArray(input.brand) && input.brand.length === 1
       ? input.brand[0]
       : input.brand
   }
-  if (input.min_ram_gb != null) electronicsConstraints.minRamGb = input.min_ram_gb
-  if (input.min_storage_gb != null) electronicsConstraints.minStorageGb = input.min_storage_gb
-  if (Object.keys(electronicsConstraints).length > 0) {
-    intent.electronicsConstraints = electronicsConstraints
+  if (input.max_price_per_hour != null) {
+    gpuComputeConstraints.maxPricePerHour = {
+      amount: toMinorUnits(input.max_price_per_hour, currency),
+      currency,
+    }
+  }
+  if (Object.keys(gpuComputeConstraints).length > 0) {
+    intent.gpuComputeConstraints = gpuComputeConstraints
+  }
+
+  // Electronics filters map to electronicsConstraints — only wired for the
+  // shelved electronics vertical, reached via an explicit electronics.* category.
+  if (isElectronicsCategory(category)) {
+    const electronicsConstraints: Record<string, unknown> = {}
+    if (input.brand) {
+      electronicsConstraints.manufacturer = Array.isArray(input.brand) && input.brand.length === 1
+        ? input.brand[0]
+        : input.brand
+    }
+    if (input.min_ram_gb != null) electronicsConstraints.minRamGb = input.min_ram_gb
+    if (input.min_storage_gb != null) electronicsConstraints.minStorageGb = input.min_storage_gb
+    if (Object.keys(electronicsConstraints).length > 0) {
+      intent.electronicsConstraints = electronicsConstraints
+    }
   }
 
   if (input.max_delivery_days != null || input.destination_country) {
@@ -74,24 +109,19 @@ export function buildBuyerIntent(input: SearchInput): Record<string, unknown> {
   return intent
 }
 
+function isElectronicsCategory(category: string): boolean {
+  return category === 'electronics' || category.startsWith('electronics.')
+}
+
+/**
+ * Infer a canonical `compute.*` category from a free-text query. Compute is the
+ * active vertical, so an unrecognized query defaults to `compute.gpu`. Cluster
+ * and inference sub-verticals are inferred from their keywords.
+ */
 function inferCategory(query?: string): string {
-  if (!query) return 'electronics'
+  if (!query) return 'compute.gpu'
   const q = query.toLowerCase()
-  if (q.includes('laptop') || q.includes('notebook')) return 'electronics.laptops'
-  if (q.includes('monitor') || q.includes('display') || q.includes('screen')) return 'electronics.monitors'
-  if (q.includes('phone') || q.includes('smartphone') || q.includes('mobile')) return 'electronics.smartphones'
-  if (q.includes('keyboard')) return 'electronics.keyboards'
-  if (q.includes('mouse') || q.includes('mice')) return 'electronics.mice'
-  if (q.includes('headphone') || q.includes('headset') || q.includes('earphone')) return 'electronics.headphones'
-  if (q.includes('tablet') || q.includes('ipad')) return 'electronics.tablets'
-  if (q.includes('camera') || q.includes('webcam')) return 'electronics.cameras'
-  if (q.includes('tv') || q.includes('television')) return 'electronics.televisions'
-  if (q.includes('speaker')) return 'electronics.speakers'
-  if (q.includes('printer')) return 'electronics.printers'
-  if (q.includes('router') || q.includes('networking')) return 'electronics.networking'
-  if (q.includes('storage') || q.includes('ssd') || q.includes('hard drive') || q.includes('hdd')) return 'electronics.storage'
-  if (q.includes('gpu') || q.includes('graphics card')) return 'electronics.gpus'
-  if (q.includes('cpu') || q.includes('processor')) return 'electronics.cpus'
-  if (q.includes('ram') || q.includes('memory')) return 'electronics.memory'
-  return 'electronics'
+  if (q.includes('cluster') || q.includes('training') || q.includes('multi-node')) return 'compute.cluster'
+  if (q.includes('inference') || q.includes('serving') || q.includes('endpoint')) return 'compute.inference'
+  return 'compute.gpu'
 }

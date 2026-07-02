@@ -57,19 +57,23 @@ export function formatNegotiationSession(session: any): string {
 
 /**
  * Human-readable explanation of what an order status means and what happens
- * next. Merka2a fulfils aggregated-distributor orders manually, so a bare
+ * next. Compute orders are provisioned rather than shipped, so a bare
  * `created` status is opaque without this context.
  */
 export function orderStatusMessage(order: any): string {
   switch (order.status) {
     case 'created':
-      return 'Recorded — awaiting operator confirmation. Aggregated-distributor orders (Mouser/Digi-Key) are placed manually by a Merka2a operator, typically within 1–5 business days. There is no automatic acceptance or ETA yet, and payment is handled separately (not captured at this step). Poll `check_order` for updates.'
+      return 'Recorded — awaiting confirmation. Compute capacity is reserved from curated supply. There is no automatic acceptance or ETA yet, and payment is handled separately (not captured at this step). Poll `check_order` for updates.'
     case 'payment-pending':
       return 'Payment is required to proceed. Payment is handled manually for now.'
     case 'payment-captured':
-      return 'Payment received. The operator will place the source order with the distributor shortly.'
+      return 'Payment received. Provisioning of the reserved capacity will begin shortly.'
     case 'confirmed':
-      return 'Source order placed with the distributor. Awaiting shipment.'
+      return 'Order confirmed. Awaiting provisioning of the reserved compute.'
+    case 'provisioning':
+      return 'Provisioning in progress — access to the reserved compute is being set up.'
+    case 'provisioned':
+      return 'Provisioned. Access to the reserved compute has been granted.'
     case 'shipped':
       return 'In transit. See tracking details below.'
     case 'delivered':

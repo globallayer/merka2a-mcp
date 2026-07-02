@@ -40,7 +40,7 @@ export const MCP_AGENT_REGISTRATION = {
     country: 'GB',
   },
   capabilities: {
-    categories: ['electronics'],
+    categories: ['compute.gpu'],
     maxConcurrentNegotiations: 10,
   },
   contactEmail: 'mcp-agent@merka2a.local',

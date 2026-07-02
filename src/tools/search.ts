@@ -8,16 +8,16 @@ import { withErrorHandling } from '../util/error-handler.js'
 export function registerSearchTools(server: McpServer, client: Merka2aClient): void {
   server.tool(
     'search_products',
-    'Search the Merka2a marketplace for products. Provide a category and optional filters like budget, brand, specs. All prices are in the main currency unit (e.g. 1500 means GBP 1,500.00).',
+    'Search the Merka2a agent-native compute exchange for GPU/compute offers. Provide a category and optional filters like budget, GPU model, VRAM, region. All prices are in the main currency unit (e.g. 2.50 means USD 2.50 per GPU-hour).',
     {
       query: z.string().max(500).optional()
-        .describe('Free-text search query, e.g. "lightweight laptop with 16GB RAM"'),
+        .describe('Free-text search query, e.g. "8x H100 80GB for training"'),
       category: z.string().optional()
-        .describe('Product category, e.g. "electronics.laptops", "electronics.monitors". If omitted, inferred from query.'),
+        .describe('Compute category, e.g. "compute.gpu", "compute.cluster", "compute.inference". If omitted, inferred from query.'),
       max_budget: z.number().positive().optional()
-        .describe('Maximum budget in major currency units (e.g. 1500 for GBP 1,500)'),
-      currency: z.string().length(3).default('GBP')
-        .describe('ISO 4217 currency code (default: GBP)'),
+        .describe('Maximum budget in major currency units'),
+      currency: z.string().length(3).default('USD')
+        .describe('ISO 4217 currency code (default: USD)'),
       budget_preference: z.enum(['cheapest', 'best-value', 'premium']).optional()
         .describe('Budget preference'),
       quantity: z.number().int().positive().default(1)
@@ -25,11 +25,17 @@ export function registerSearchTools(server: McpServer, client: Merka2aClient): v
       condition: z.array(z.enum(['new', 'refurbished', 'used-like-new', 'used-good', 'used-fair'])).optional()
         .describe('Acceptable product conditions'),
       brand: z.union([z.string(), z.array(z.string())]).optional()
-        .describe('Brand/manufacturer filter'),
-      min_ram_gb: z.number().positive().optional()
-        .describe('Minimum RAM in GB (electronics)'),
-      min_storage_gb: z.number().positive().optional()
-        .describe('Minimum storage in GB (electronics)'),
+        .describe('Manufacturer filter, e.g. "NVIDIA", "AMD"'),
+      gpu_model: z.union([z.string(), z.array(z.string())]).optional()
+        .describe('GPU model filter, e.g. "H100", ["H100","A100"]'),
+      min_vram_gb: z.number().positive().optional()
+        .describe('Minimum VRAM per GPU in GB, e.g. 80'),
+      min_gpu_count: z.number().int().positive().optional()
+        .describe('Minimum GPUs per instance, e.g. 8'),
+      region: z.string().optional()
+        .describe('Deployment region, e.g. "eu-west", "us-east"'),
+      max_price_per_hour: z.number().positive().optional()
+        .describe('Maximum price per GPU-hour in major currency units'),
       max_delivery_days: z.number().int().positive().optional()
         .describe('Maximum acceptable delivery time in days'),
       destination_country: z.string().length(2).optional()
@@ -46,11 +52,11 @@ export function registerSearchTools(server: McpServer, client: Merka2aClient): v
 
         if (!result.results?.length) {
           return textContent(
-            'No products found matching your criteria. Try broadening your search:\n' +
-            '- Increase your budget\n' +
-            '- Relax condition requirements\n' +
-            '- Try a broader category (e.g. "electronics" instead of "electronics.laptops")\n' +
-            '- Remove brand or spec filters'
+            'No offers found matching your criteria. Try broadening your search:\n' +
+            '- Increase your budget or per-hour cap\n' +
+            '- Relax the VRAM or GPU-count minimums\n' +
+            '- Try a broader category (e.g. "compute.gpu" instead of a specific model)\n' +
+            '- Remove the GPU model or region filters'
           )
         }
 

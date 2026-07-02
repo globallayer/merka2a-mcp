@@ -836,7 +836,7 @@ export class Merka2aClient {
   }
 
   // --- Buyer: Orders ---
-  createOrder(request: { offerId: string; quantity: number; negotiationSessionId?: string; shippingAddress: { country: string; postalCode?: string; city?: string }; shippingMethod: string }) {
+  createOrder(request: { offerId: string; quantity: number; negotiationSessionId?: string; shippingAddress?: { country: string; postalCode?: string; city?: string }; shippingMethod?: string; fulfillmentType?: 'ship' | 'provision' }) {
     return this.request('POST', '/v1/create-order', request)
   }
   listOrders(pagination?: PaginationParams) {

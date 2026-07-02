@@ -26,7 +26,7 @@ export function registerMarketplaceInfoResource(
             ).join('\n')
         }
       } catch {
-        categoriesSection = '\n## Available Categories\n\n- `electronics` (and subcategories)'
+        categoriesSection = '\n## Available Categories\n\n- `compute.gpu`, `compute.cluster`, `compute.inference`'
       }
 
       return {
@@ -40,36 +40,35 @@ export function registerMarketplaceInfoResource(
   )
 }
 
-const MARKETPLACE_INFO = `# Merka2a — Agent Exchange
+const MARKETPLACE_INFO = `# Merka2a — Agent-Native Compute Exchange
 
-Merka2a is a neutral interchange layer for AI commerce agents. It allows buyer and seller AI agents to trade products through a structured API.
+Merka2a is a neutral interchange layer for AI commerce agents. It lets buyer and seller AI agents discover, negotiate, and procure GPU/compute capacity through a structured API.
 
 ## How It Works
 
-1. **Search** — Use \`search_products\` with a category and optional filters (budget, brand, specs, delivery requirements)
-2. **Negotiate** — If an offer is negotiable, use \`start_negotiation\` with your target price. An automated rules engine (not a human seller, and not the distributor) generates the response instantly.
-3. **Order** — Use \`place_order\` to record an order. Reference a negotiation session ID to get the negotiated price.
-4. **Track** — Use \`check_order\` and \`list_orders\` to monitor order status.
+1. **Search** — Use \`search_products\` with a category (e.g. \`compute.gpu\`) and optional filters (budget, GPU model, VRAM, GPU count, region)
+2. **Negotiate** — If an offer is negotiable, use \`start_negotiation\` with your target price. An automated rules engine (not a human seller) generates the response instantly.
+3. **Order** — Use \`place_order\` to record a compute order. Reference a negotiation session ID to get the negotiated price.
+4. **Track** — Use \`check_order\` and \`list_orders\` to monitor order status through provisioning.
 
 ## Order Fulfillment (read before ordering)
 
-Merka2a is an **aggregator**: products are pulled from distributors such as Mouser and Digi-Key. When you place an order, it is **recorded** (status \`created\`) and then **fulfilled manually** by a Merka2a operator who places the real order with the distributor and ships to you. Expect **1–5 business days** depending on distributor availability.
+Compute supply is curated. When you place an order, it is **recorded** (status \`created\`) and then **provisioned** — access is granted for the reserved capacity. Digital compute orders skip physical shipping.
 
-- **No automatic acceptance / ETA.** The order does not auto-confirm; status advances as the operator processes it. Poll \`check_order\` — \`sourceOrderStatus\` and tracking appear there once the operator acts.
-- **Payment is handled separately.** Funds are not captured at order time (Stripe is currently paused).
-- **Minimum order quantity (MOQ) is enforced.** Orders below a part's MOQ (e.g. reel/pack quantities from the distributor) are rejected at \`place_order\` with a clear error.
+- **No automatic acceptance / ETA.** The order does not auto-confirm; status advances as it is provisioned. Poll \`check_order\` for the current status.
+- **Payment is handled separately.** Funds are not captured at order time (Stripe is currently paused; crypto settlement is a fast-follow).
 
 ## Key Concepts
 
-- **Offers** are listed by sellers and tied to products. Each offer has a price, inventory count, and optional negotiation rules.
-- **Products** have detailed specs, shipping options, and return policies.
+- **Offers** are listed by sellers and tied to compute products. Each offer has a per-hour price, inventory count, and optional negotiation rules.
+- **Products** carry structured GPU attributes: \`gpuModel\`, \`vramGb\`, \`gpuCount\`, \`interconnect\`, \`manufacturer\`, \`region\`.
 - **Negotiation** is multi-round. The seller may: auto-accept (if your price is above their threshold), counter-offer, or decline.
-- **Money** is in major currency units in all tool inputs/outputs (e.g. 1299.99 means GBP 1,299.99).
+- **Money** is in major currency units in all tool inputs/outputs (e.g. 2.50 means USD 2.50 per GPU-hour).
 
 ## Supported Workflows
 
-- **Single purchase**: search → (optional negotiate) → order
-- **Bulk procurement**: search multiple categories → negotiate volume discounts → place multiple orders
+- **Single reservation**: search → (optional negotiate) → order → provisioned
+- **Bulk procurement**: search across regions/models → negotiate volume discounts → place multiple orders
 - **Price comparison**: search with different parameters to compare offerings across sellers
 - **Refunds & disputes**: cancel orders, request refunds, open disputes if needed
 `

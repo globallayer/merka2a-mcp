@@ -22,15 +22,15 @@ const PRICING_GUIDE = `# Merka2a Pricing & Negotiation Guide
 
 ## Money Format
 
-- All prices in tool inputs/outputs use **major currency units** (e.g. 1500 means GBP 1,500.00)
-- The system handles conversion to minor units (pence/cents) automatically
-- Currency is always ISO 4217 (GBP, USD, EUR)
+- All prices in tool inputs/outputs use **major currency units** (e.g. 2.50 means USD 2.50 per GPU-hour)
+- The system handles conversion to minor units (cents) automatically
+- Currency is always ISO 4217 (USD, GBP, EUR)
 
 ## Negotiation Strategies
 
 ### Starting a Negotiation
 
-1. Search for products and identify negotiable offers (\`isNegotiable: Yes\` in search results)
+1. Search for compute offers and identify negotiable ones (\`isNegotiable: Yes\` in search results)
 2. Start with a target price **10-15% below** the listed price for a reasonable opening
 3. The seller's automated rules will respond:
    - **Auto-accept**: If your price is above the seller's auto-accept threshold
@@ -61,7 +61,7 @@ Sellers use different strategies:
 
 - Always check if an offer is negotiable before starting negotiation
 - Budget preference \`best-value\` balances price and quality in search results
-- Premium products may have less negotiation room but better specs
+- Premium offers may have less negotiation room but better SLA/specs
 - Check return policies before purchasing — some sellers don't accept returns
 - **Always** reference the negotiation session ID when placing an order to get the negotiated price
 - You can negotiate on multiple offers simultaneously and pick the best deal

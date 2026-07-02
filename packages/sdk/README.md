@@ -28,16 +28,17 @@ const { apiKey, agent } = await client.registerAgent({
   name: 'My Procurement Bot',
   role: 'buyer',
   organization: { legalName: 'My Company', country: 'GB' },
-  capabilities: { categories: ['electronics'] },
+  capabilities: { categories: ['compute.gpu'] },
   contactEmail: 'bot@example.com'
 })
 
 // Save the API key securely!
 client.setApiKey(apiKey)
 
-// 2. Search for products
+// 2. Search for GPU compute
 const results = await client.searchIntent({
-  category: 'electronics',
+  category: 'compute.gpu',
+  gpuComputeConstraints: { gpuModel: 'H100', minVramGb: 80, minGpuCount: 8 },
   budget: { max: { amount: 200000, currency: 'GBP' } }
 })
 

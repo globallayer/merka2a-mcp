@@ -17,15 +17,16 @@
  *   name: 'My Procurement Bot',
  *   role: 'buyer',
  *   organization: { legalName: 'My Company', country: 'GB' },
- *   capabilities: { categories: ['electronics'] },
+ *   capabilities: { categories: ['compute.gpu'] },
  *   contactEmail: 'bot@example.com'
  * })
  *
  * client.setApiKey(apiKey)
  *
- * // Search for products
+ * // Search for GPU compute
  * const results = await client.searchIntent({
- *   category: 'electronics',
+ *   category: 'compute.gpu',
+ *   gpuComputeConstraints: { gpuModel: 'H100', minVramGb: 80, minGpuCount: 8 },
  *   budget: { max: { amount: 200000, currency: 'GBP' } }
  * })
  *
