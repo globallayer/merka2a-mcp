@@ -4,6 +4,7 @@ import { registerSearchTools } from './tools/search.js'
 import { registerProductTools } from './tools/product.js'
 import { registerNegotiationTools } from './tools/negotiation.js'
 import { registerOrderTools } from './tools/orders.js'
+import { registerPaymentTools } from './tools/payments.js'
 import { registerDiscoveryTools } from './tools/discovery.js'
 import { registerMarketplaceInfoResource } from './resources/marketplace-info.js'
 import { registerPricingGuideResource } from './resources/pricing-guide.js'
@@ -18,11 +19,12 @@ export async function createServer(): Promise<McpServer> {
 
   const client = createAuthenticatedClient()
 
-  // Register tools (11 total)
+  // Register tools (18 total)
   registerSearchTools(server, client)       // search_products, browse_categories
   registerProductTools(server, client)      // get_product
   registerNegotiationTools(server, client)  // start_negotiation, counter_offer, accept_deal
   registerOrderTools(server, client)        // place_order, check_order, list_orders, cancel_order, request_refund
+  registerPaymentTools(server, client)      // pay_order (x402 / USDC on Base)
   registerDiscoveryTools(server, client)    // discover_agents, get_agent_capabilities, get_agent_did, list_capability_types, get_discovery_stats, resolve_did
 
   // Register resources (2)
@@ -33,6 +35,6 @@ export async function createServer(): Promise<McpServer> {
   registerFindDealPrompt(server)
   registerProcurementPrompt(server)
 
-  console.error('[merka2a-mcp] Server initialized with 17 tools, 2 resources, 2 prompts')
+  console.error('[merka2a-mcp] Server initialized with 18 tools, 2 resources, 2 prompts')
   return server
 }

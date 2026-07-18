@@ -264,3 +264,8 @@ export interface PaginationParams {
 // type interfaces above are retained for backward compatibility.
 export { Merka2aClient, Merka2aError } from './client.js'
 export { Merka2aClient as default } from './client.js'
+export type {
+  X402PaymentRequirements,
+  X402TermsResponse,
+  X402PaymentResult,
+} from './client.js'

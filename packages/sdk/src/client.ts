@@ -710,6 +710,51 @@ export interface SubscriptionResponse {
   rateLimitRpm?: number
 }
 
+// --- x402 Agent-Native Payment Types (DEC-051) ---
+
+/** x402 PaymentRequirements as advertised in the 402 `accepts[]` array. */
+export interface X402PaymentRequirements {
+  scheme: 'exact'
+  network: string
+  /** Max amount payable in the asset's atomic units (USDC = 6 dp), as a string. */
+  maxAmountRequired: string
+  resource: string
+  description: string
+  mimeType: string
+  payTo: string
+  maxTimeoutSeconds: number
+  /** ERC-20 (USDC) contract address. */
+  asset: string
+  /** EIP-712 domain hints for the asset. */
+  extra: { name: string; version: string }
+}
+
+/** The 402 challenge body returned when no X-PAYMENT header is supplied. */
+export interface X402TermsResponse {
+  x402Version: number
+  error: string
+  accepts: X402PaymentRequirements[]
+}
+
+/** Result of a settled x402 payment (200 body from the pay-x402 endpoint). */
+export interface X402PaymentResult {
+  orderId: string
+  status: 'payment-captured'
+  paymentMethod: 'x402'
+  settlement: {
+    transaction?: string
+    network?: string
+    payer?: string
+  }
+  /** Decoded X-PAYMENT-RESPONSE header, when present. */
+  paymentResponse?: {
+    success: boolean
+    transaction?: string
+    network?: string
+    payer?: string
+  }
+}
+
 export class Merka2aClient {
   private baseUrl: string
   private apiKey: string | undefined
@@ -1322,6 +1367,59 @@ export class Merka2aClient {
   /** Configure a premium feature */
   configurePremiumFeature(feature: string, config: Record<string, unknown>) {
     return this.request<{ feature: string; config: Record<string, unknown>; updatedAt: string }>('POST', `/v1/premium/features/${feature}/configure`, { config })
+  }
+
+  // --- x402 Agent-Native Payment (DEC-051) ---
+
+  /**
+   * Fetch the x402 payment terms for an order by hitting the pay-x402 endpoint
+   * with no X-PAYMENT header. The gateway answers HTTP 402 with the payment
+   * requirements — the expected, non-error path here. Throws only on a real
+   * failure (auth, ownership, unconfigured rail, non-USD order).
+   */
+  async getX402Terms(orderId: string): Promise<X402TermsResponse> {
+    const headers: Record<string, string> = {}
+    if (this.apiKey) headers['Authorization'] = `Bearer ${this.apiKey}`
+    const res = await fetch(`${this.baseUrl}/v1/orders/${orderId}/pay-x402`, {
+      method: 'POST',
+      headers,
+    })
+    const data = (await res.json().catch(() => null)) as any
+    if (res.status === 402) return data as X402TermsResponse
+    // Any other status is an error (200 here would mean a header was expected).
+    const msg = data?.error ?? res.statusText
+    throw new Merka2aError(msg, res.status, data)
+  }
+
+  /**
+   * Submit a signed x402 payment (base64 X-PAYMENT header) to capture an order.
+   * Returns the settlement result on 200, including the decoded
+   * X-PAYMENT-RESPONSE header when the gateway supplies it.
+   */
+  async submitX402Payment(orderId: string, xPaymentB64: string): Promise<X402PaymentResult> {
+    const headers: Record<string, string> = { 'X-PAYMENT': xPaymentB64 }
+    if (this.apiKey) headers['Authorization'] = `Bearer ${this.apiKey}`
+    const res = await fetch(`${this.baseUrl}/v1/orders/${orderId}/pay-x402`, {
+      method: 'POST',
+      headers,
+    })
+    const data = (await res.json().catch(() => null)) as any
+    if (!res.ok) {
+      const msg = data?.error ?? res.statusText
+      throw new Merka2aError(msg, res.status, data)
+    }
+    const result = data as X402PaymentResult
+    const respHeader = res.headers.get('X-PAYMENT-RESPONSE')
+    if (respHeader) {
+      try {
+        result.paymentResponse = JSON.parse(
+          Buffer.from(respHeader, 'base64').toString('utf8'),
+        )
+      } catch {
+        // Non-fatal: the settlement already succeeded; the header is advisory.
+      }
+    }
+    return result
   }
 }
 
