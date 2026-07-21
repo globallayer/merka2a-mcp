@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.globallayer/mcp-server",
-  "description": "MCP server for the Merka2a agent-native compute exchange — enables Claude and AI assistants to search, negotiate, and order GPU compute",
+  "description": "Merka2a MCP server - AI agents search, negotiate and order GPU compute",
   "repository": {
     "url": "https://github.com/globallayer/Marketplace",
     "source": "github"
