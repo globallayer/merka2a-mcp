@@ -881,8 +881,17 @@ export class Merka2aClient {
   }
 
   // --- Buyer: Orders ---
-  createOrder(request: { offerId: string; quantity: number; negotiationSessionId?: string; shippingAddress?: { country: string; postalCode?: string; city?: string }; shippingMethod?: string; fulfillmentType?: 'ship' | 'provision' }) {
-    return this.request('POST', '/v1/create-order', request)
+  /**
+   * Place an order. Pass `opts.idempotencyKey` to make a retried create-order safe:
+   * the gateway deduplicates by (buyer, key) and returns the original order instead
+   * of booking a second one. Omit it and no header is sent (behavior unchanged).
+   */
+  createOrder(
+    request: { offerId: string; quantity: number; negotiationSessionId?: string; shippingAddress?: { country: string; postalCode?: string; city?: string }; shippingMethod?: string; fulfillmentType?: 'ship' | 'provision' },
+    opts?: { idempotencyKey?: string },
+  ) {
+    const extraHeaders = opts?.idempotencyKey ? { 'Idempotency-Key': opts.idempotencyKey } : undefined
+    return this.request('POST', '/v1/create-order', request, extraHeaders)
   }
   listOrders(pagination?: PaginationParams) {
     return this.request('GET', `/v1/orders${this.qs(pagination)}`)
