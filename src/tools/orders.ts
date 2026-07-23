@@ -8,43 +8,54 @@ import { withErrorHandling } from '../util/error-handler.js'
 export function registerOrderTools(server: McpServer, client: Merka2aClient): void {
   server.tool(
     'place_order',
-    'Place an order for a product. Requires offer ID, quantity, shipping address, and shipping method. Optionally reference a negotiation session for a negotiated price.',
+    'Reserve a compute offer at its listed (fixed) price. Requires the offer ID and quantity. ' +
+      'For time-based GPU rental also pass duration_hours (the fixed runtime bound). Compute is ' +
+      'provisioned, not shipped, so no address is needed. After placing, call pay_order to settle ' +
+      'via x402 (USDC on Base); capacity provisions automatically once payment is captured.',
     {
       offer_id: z.string().uuid()
-        .describe('The offer ID to order'),
+        .describe('The offer ID to order (from search_products)'),
       quantity: z.number().int().positive()
-        .describe('Number of units to order'),
-      negotiation_session_id: z.string().uuid().optional()
-        .describe('Negotiation session ID if you negotiated a price'),
-      shipping_country: z.string().length(2)
-        .describe('ISO 3166-1 alpha-2 country code, e.g. "GB", "US"'),
+        .describe('Number of units to reserve (default 1)'),
+      duration_hours: z.number().int().positive().optional()
+        .describe('Fixed runtime in hours for a time-based GPU rental. Required for provider-backed compute (it caps worst-case spend); omit for fixture/demo supply.'),
+      // Shipping fields are optional and only used for the shelved physical-goods
+      // vertical; compute orders ignore them (the gateway derives provision from
+      // the compute.* category).
+      shipping_country: z.string().length(2).optional()
+        .describe('Only for shipped physical goods: ISO 3166-1 alpha-2 country code. Omit for compute.'),
       shipping_city: z.string().optional()
-        .describe('City name'),
+        .describe('Only for shipped physical goods: city name. Omit for compute.'),
       shipping_postal_code: z.string().optional()
-        .describe('Postal/ZIP code'),
-      shipping_method: z.enum(['standard', 'express', 'next-day']).default('standard')
-        .describe('Shipping speed: standard, express, or next-day'),
+        .describe('Only for shipped physical goods: postal/ZIP code. Omit for compute.'),
+      shipping_method: z.enum(['standard', 'express', 'next-day']).optional()
+        .describe('Only for shipped physical goods: shipping speed. Omit for compute.'),
     },
     async (input) => {
       return withErrorHandling(async () => {
+        const hasShipping = input.shipping_country != null
         const order = await client.createOrder({
           offerId: input.offer_id,
           quantity: input.quantity,
-          negotiationSessionId: input.negotiation_session_id,
-          shippingAddress: {
-            country: input.shipping_country,
-            city: input.shipping_city,
-            postalCode: input.shipping_postal_code,
-          },
-          shippingMethod: input.shipping_method,
+          durationHours: input.duration_hours,
+          ...(hasShipping
+            ? {
+                shippingAddress: {
+                  country: input.shipping_country!,
+                  city: input.shipping_city,
+                  postalCode: input.shipping_postal_code,
+                },
+                shippingMethod: input.shipping_method,
+              }
+            : {}),
         })
 
         return textContent(
           formatOrder(order) + '\n\n' +
-          `**Order recorded** (status \`created\`). This does not yet mean it is accepted or paid. ` +
-          `Aggregated-distributor orders are fulfilled **manually** by a Merka2a operator (typically 1–5 business days); ` +
-          `there is no automatic acceptance, and payment is handled separately. ` +
-          `Poll \`check_order\` with ID \`${order.id}\` to follow fulfilment progress.`
+          `**Order recorded** (status \`created\`) — capacity is reserved at the listed price. ` +
+          `Next: call \`pay_order\` with ID \`${order.id}\` to settle via x402 (USDC on Base). ` +
+          `Once payment is captured the compute provisions automatically; poll \`check_order\` ` +
+          `until the status is \`provisioned\`.`
         )
       }, 'Place Order')
     },

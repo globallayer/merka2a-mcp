@@ -1,6 +1,6 @@
 {
   "name": "@merk.a2a/mcp-server",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "mcpName": "io.github.globallayer/mcp-server",
   "description": "MCP server for the Merka2a agent-native compute exchange — enables Claude and AI assistants to search, negotiate, and order GPU compute",
   "type": "module",

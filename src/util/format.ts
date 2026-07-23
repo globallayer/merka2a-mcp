@@ -11,7 +11,6 @@ export function formatSearchResult(result: any, index: number): string {
     `- **Brand:** ${product?.brand ?? 'N/A'}`,
     `- **Category:** ${product?.category ?? 'N/A'}`,
     `- **Match Score:** ${matchScore}/100`,
-    `- **Negotiable:** ${offer.isNegotiable ? 'Yes' : 'No'}`,
     `- **In Stock:** ${offer.inventoryCount ?? 'N/A'} units`,
   ]
   // Seller trust information
@@ -27,10 +26,6 @@ export function formatSearchResult(result: any, index: number): string {
   if (matchDetails) {
     if (matchDetails.budgetFit != null) lines.push(`- **Budget Fit:** ${matchDetails.budgetFit ? 'Yes' : 'No'}`)
     if (matchDetails.deliveryFit != null) lines.push(`- **Delivery Fit:** ${matchDetails.deliveryFit ? 'Yes' : 'No'}`)
-  }
-  if (offer.negotiationRules) {
-    const rules = offer.negotiationRules
-    if (rules.maxDiscountPercent) lines.push(`- **Max Discount:** ${rules.maxDiscountPercent}%`)
   }
   return lines.join('\n')
 }
@@ -63,9 +58,9 @@ export function formatNegotiationSession(session: any): string {
 export function orderStatusMessage(order: any): string {
   switch (order.status) {
     case 'created':
-      return 'Recorded — awaiting confirmation. Compute capacity is reserved from curated supply. There is no automatic acceptance or ETA yet, and payment is handled separately (not captured at this step). Poll `check_order` for updates.'
+      return 'Recorded — capacity reserved at the listed price. Payment is not captured yet: call `pay_order` to settle via x402 (USDC on Base), then the compute provisions automatically. Poll `check_order` for updates.'
     case 'payment-pending':
-      return 'Payment is required to proceed. Payment is handled manually for now.'
+      return 'Awaiting payment. Call `pay_order` to settle via x402 (USDC on Base); capacity provisions automatically once payment is captured.'
     case 'payment-captured':
       return 'Payment received. Provisioning of the reserved capacity will begin shortly.'
     case 'confirmed':

@@ -21,11 +21,11 @@ export function registerProductTools(server: McpServer, client: Merka2aClient): 
           `## Product Lookup\n\n` +
           `**Offer ID:** \`${offer_id}\`\n\n` +
           `Search results from \`search_products\` already include full product details ` +
-          `(title, description, price, specs, shipping, return policy).\n\n` +
+          `(title, description, per-hour price, GPU specs, stock).\n\n` +
           `**What you can do with this offer:**\n` +
-          `- **Negotiate:** Use \`start_negotiation\` with this offer ID to negotiate a better price\n` +
-          `- **Buy directly:** Use \`place_order\` with this offer ID to purchase at listed price\n` +
-          `- **Search again:** Use \`search_products\` to find similar or alternative products`
+          `- **Buy:** Use \`place_order\` with this offer ID (add \`duration_hours\` for a time-based rental) to reserve at the listed price\n` +
+          `- **Pay:** Use \`pay_order\` to settle via x402 (USDC on Base); capacity provisions automatically once paid\n` +
+          `- **Search again:** Use \`search_products\` to find similar or alternative offers`
         )
       }, 'Get Product')
     },

@@ -3,36 +3,39 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 
 export function registerFindDealPrompt(server: McpServer): void {
   server.prompt(
-    'find-deal',
-    'Guided workflow: search for a compute offer, negotiate the best price, and place an order',
+    'buy-compute',
+    'Guided workflow: search for a GPU/compute offer and buy it end-to-end (place order, pay via x402, provision)',
     {
       product: z.string()
-        .describe('What compute are you looking for? e.g. "8x H100 80GB for training"'),
+        .describe('What compute do you need? e.g. "8x H100 80GB for training"'),
       budget: z.string().optional()
         .describe('Maximum budget, e.g. "5 USD/hr" or "under 10000"'),
+      duration_hours: z.string().optional()
+        .describe('How many hours of runtime? e.g. "24" (needed for time-based GPU rental)'),
       quantity: z.string().default('1')
         .describe('How many units? Default: 1'),
     },
-    ({ product, budget, quantity }) => ({
+    ({ product, budget, duration_hours, quantity }) => ({
       messages: [
         {
           role: 'user' as const,
           content: {
             type: 'text' as const,
             text: [
-              `I want to find the best deal on: **${product}**`,
+              `I want to buy compute: **${product}**`,
               budget ? `My budget is **${budget}**.` : '',
+              duration_hours ? `I need it for **${duration_hours} hours**.` : '',
               quantity && quantity !== '1' ? `I need **${quantity} units**.` : '',
               '',
-              'Please follow this workflow:',
-              '1. Search for matching compute offers using `search_products`',
-              '2. Show me the top results with per-hour prices and key GPU specs',
-              '3. If any offers are negotiable, recommend which to negotiate on and why',
-              '4. Start a negotiation targeting 10-12% below listed price',
-              '5. Continue negotiating (counter-offer) until we get a good deal or the seller stops',
-              '6. Once we have a deal, help me place the order',
+              'Prices are fixed at provider retail (no negotiation). Please follow this workflow:',
+              '1. Search matching compute offers with `search_products`',
+              '2. Show me the top results with per-hour prices, GPU specs, and stock',
+              '3. Recommend the best-value offer within my budget and explain why',
+              '4. Place the order with `place_order` (pass `duration_hours` for a time-based rental)',
+              '5. Pay agent-natively with `pay_order` (x402 / USDC on Base)',
+              '6. Poll `check_order` until the status is `provisioned`, then give me the access details',
               '',
-              'At each step, explain what you\'re doing and ask for my confirmation before proceeding.',
+              'At each step, explain what you\'re doing and confirm the total cost before you place and pay.',
             ].filter(Boolean).join('\n'),
           },
         },

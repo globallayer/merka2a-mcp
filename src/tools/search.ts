@@ -66,8 +66,8 @@ export function registerSearchTools(server: McpServer, client: Merka2aClient): v
           .join('\n\n---\n\n')
 
         const footer = '\n\n---\n\n**Next steps:**\n' +
-          '- To negotiate a price, use `start_negotiation` with the Offer ID\n' +
-          '- To buy directly at listed price, use `place_order` with the Offer ID'
+          '- Buy at the listed price: `place_order` with the Offer ID (add `duration_hours` for a time-based GPU rental)\n' +
+          '- Then settle agent-natively: `pay_order` (x402 / USDC on Base). Capacity provisions automatically once paid.'
 
         return textContent(header + formatted + footer)
       }, 'Product Search')

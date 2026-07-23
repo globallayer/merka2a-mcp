@@ -887,7 +887,7 @@ export class Merka2aClient {
    * of booking a second one. Omit it and no header is sent (behavior unchanged).
    */
   createOrder(
-    request: { offerId: string; quantity: number; negotiationSessionId?: string; shippingAddress?: { country: string; postalCode?: string; city?: string }; shippingMethod?: string; fulfillmentType?: 'ship' | 'provision' },
+    request: { offerId: string; quantity: number; negotiationSessionId?: string; shippingAddress?: { country: string; postalCode?: string; city?: string }; shippingMethod?: string; fulfillmentType?: 'ship' | 'provision'; durationHours?: number },
     opts?: { idempotencyKey?: string },
   ) {
     const extraHeaders = opts?.idempotencyKey ? { 'Idempotency-Key': opts.idempotencyKey } : undefined

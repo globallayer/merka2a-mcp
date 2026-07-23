@@ -5,7 +5,7 @@ export function registerPricingGuideResource(server: McpServer): void {
     'pricing-guide',
     'merka2a://pricing-guide',
     {
-      description: 'How pricing works, negotiation strategies, and tips for getting the best deals',
+      description: 'How compute pricing works and how to buy at the best value',
       mimeType: 'text/markdown',
     },
     async () => ({
@@ -18,51 +18,31 @@ export function registerPricingGuideResource(server: McpServer): void {
   )
 }
 
-const PRICING_GUIDE = `# Merka2a Pricing & Negotiation Guide
+const PRICING_GUIDE = `# Merka2a Pricing & Buying Guide
 
 ## Money Format
 
 - All prices in tool inputs/outputs use **major currency units** (e.g. 2.50 means USD 2.50 per GPU-hour)
 - The system handles conversion to minor units (cents) automatically
-- Currency is always ISO 4217 (USD, GBP, EUR)
+- Compute is priced and paid in **USD**
 
-## Negotiation Strategies
+## How pricing works
 
-### Starting a Negotiation
+- Merka2a is a **broker**: offers are aggregated from providers (RunPod, Lambda, Vast) at their **listed retail price**. There is no negotiation — the price you see is the price you pay.
+- Each offer shows a **per-GPU-hour** price and an inventory count. Total cost = per-hour price × GPUs × \`duration_hours\`.
+- Use the \`max_price_per_hour\` / \`max_budget\` filters and the \`budget_preference: best-value\` mode in \`search_products\` to surface the best value.
 
-1. Search for compute offers and identify negotiable ones (\`isNegotiable: Yes\` in search results)
-2. Start with a target price **10-15% below** the listed price for a reasonable opening
-3. The seller's automated rules will respond:
-   - **Auto-accept**: If your price is above the seller's auto-accept threshold
-   - **Counter-offer**: Seller proposes a price between your offer and the listed price
-   - **Decline**: Your price is below the seller's absolute minimum
+## How to buy (the whole path)
 
-### Counter-Offer Strategy
+1. **Search** — \`search_products\` with your category and filters; compare per-hour price and specs.
+2. **Order** — \`place_order\` with the offer ID, quantity, and \`duration_hours\` for a time-based rental. The order is recorded at the listed price.
+3. **Pay** — \`pay_order\` settles via **x402 (USDC on Base)**. With a funded buyer key (\`X402_BUYER_PRIVATE_KEY\`) it signs and settles end-to-end; otherwise it returns payment terms for a wallet.
+4. **Provision** — capacity provisions automatically once payment is captured. Poll \`check_order\` until \`provisioned\`.
 
-- After a seller counter-offer, **split the difference** between their counter and your last offer
-- Each round, the gap narrows. Most negotiations resolve in 2-3 rounds
-- Maximum rounds is configurable (default 5, max 20)
-- Don't go below the seller's minimum — they will decline
+## Tips
 
-### Volume Discounts
-
-- Some sellers offer volume tier pricing (e.g. 3% off for 5+ units, 8% off for 20+ units)
-- Specify \`volume\` in \`start_negotiation\` to activate volume pricing
-- Volume discounts stack with negotiated discounts
-
-### Seller Negotiation Styles
-
-Sellers use different strategies:
-- **Split-difference**: Meets you halfway each round (most common)
-- **Hold-firm**: Makes small concessions, sticks close to listed price (premium sellers)
-- **Gradual-concede**: Makes larger concessions in later rounds (budget sellers)
-
-### Tips
-
-- Always check if an offer is negotiable before starting negotiation
-- Budget preference \`best-value\` balances price and quality in search results
-- Premium offers may have less negotiation room but better SLA/specs
-- Check return policies before purchasing — some sellers don't accept returns
-- **Always** reference the negotiation session ID when placing an order to get the negotiated price
-- You can negotiate on multiple offers simultaneously and pick the best deal
+- Set \`duration_hours\` to bound your spend — it caps the worst-case cost of a provider-backed rental.
+- \`budget_preference: best-value\` balances price and specs in search results.
+- \`premium\` offers cost more but carry better SLA/specs; \`cheapest\` optimises purely on price.
+- You can place multiple orders and pay each independently for bulk procurement.
 `
