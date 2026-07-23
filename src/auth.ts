@@ -1,6 +1,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { homedir } from 'node:os'
+import { randomUUID } from 'node:crypto'
 import type { Merka2aClient, AgentRegistration } from '@merk.a2a/sdk'
 
 interface StoredCredentials {
@@ -13,11 +14,16 @@ interface StoredCredentials {
 /**
  * Origin tag for agents created via the MCP server. Sent on registration so the
  * public endpoint tags this agent 'mcp' at creation time (it honours the public
- * allow-list ['external','mcp']). The 0025 backfill migration tags pre-existing
- * agents 'mcp' by matching the name/contactEmail below; keep them in sync as a
- * belt-and-braces fallback for any agent registered before the endpoint change.
+ * allow-list ['external','mcp']). New agents are tagged at creation via this
+ * field; the one-shot 0025 backfill migration only ever tagged agents that
+ * pre-dated the endpoint change, so per-connection identities do not affect it.
  */
 export const MCP_ORIGIN = 'mcp' as const
+
+/** Email domain for auto-registered MCP agents. */
+export const MCP_EMAIL_DOMAIN = 'merka2a.local'
+/** Human-readable name prefix for auto-registered MCP agents. */
+export const MCP_AGENT_NAME_PREFIX = 'Merka2a MCP Agent'
 
 /** Credentials dir override hook (used by tests to avoid touching ~/.merka2a). */
 function credentialsDir(): string {
@@ -25,27 +31,40 @@ function credentialsDir(): string {
 }
 
 /**
- * Canonical registration payload for the MCP auto-registered agent.
+ * Build the registration payload for an auto-registered MCP buyer agent.
  *
- * The name + contactEmail here are the exact join keys the 0025 backfill
- * migration uses to tag this agent with origin 'mcp'; keep them in sync.
- * `origin` is sent on registration so the endpoint tags the agent 'mcp' at
- * creation time, independent of the one-shot migration backfill.
+ * Each connection gets a DISTINCT identity (thread #6): a fresh MCP connect
+ * without persisted credentials used to mint another agent under one shared
+ * placeholder (`mcp-agent@merka2a.local`), so the marketplace accrued
+ * indistinguishable duplicate buyers. A unique `mcp-<uuid>@merka2a.local`
+ * email + `Merka2a MCP Agent (<short>)` name makes every auto-registration
+ * traceable to one install.
+ *
+ * `MERKA2A_AGENT_EMAIL` / `MERKA2A_AGENT_NAME` pin a stable identity when set —
+ * used by a deployment that should present ONE branded agent across ephemeral
+ * restarts rather than minting a new one each boot. `origin: 'mcp'` is always
+ * sent so the endpoint tags demand metrics correctly.
  */
-export const MCP_AGENT_REGISTRATION = {
-  name: 'Merka2a MCP Agent',
-  role: 'buyer',
-  organization: {
-    legalName: 'MCP User',
-    country: 'GB',
-  },
-  capabilities: {
-    categories: ['compute.gpu'],
-    maxConcurrentNegotiations: 10,
-  },
-  contactEmail: 'mcp-agent@merka2a.local',
-  origin: MCP_ORIGIN,
-} satisfies AgentRegistration & { origin: typeof MCP_ORIGIN }
+export function buildMcpAgentRegistration() {
+  const uuid = randomUUID()
+  const contactEmail = process.env.MERKA2A_AGENT_EMAIL ?? `mcp-${uuid}@${MCP_EMAIL_DOMAIN}`
+  const name = process.env.MERKA2A_AGENT_NAME ?? `${MCP_AGENT_NAME_PREFIX} (${uuid.slice(0, 8)})`
+
+  return {
+    name,
+    role: 'buyer',
+    organization: {
+      legalName: 'MCP User',
+      country: 'GB',
+    },
+    capabilities: {
+      categories: ['compute.gpu'],
+      maxConcurrentNegotiations: 10,
+    },
+    contactEmail,
+    origin: MCP_ORIGIN,
+  } satisfies AgentRegistration & { origin: typeof MCP_ORIGIN }
+}
 
 export async function loadOrCreateCredentials(client: Merka2aClient): Promise<string> {
   const dir = credentialsDir()
@@ -62,8 +81,9 @@ export async function loadOrCreateCredentials(client: Merka2aClient): Promise<st
     // File doesn't exist or is invalid — will auto-register
   }
 
-  // Auto-register a new buyer agent, tagged with origin 'mcp'.
-  const result = await client.registerAgent(MCP_AGENT_REGISTRATION)
+  // Auto-register a new buyer agent with a distinct per-connection identity,
+  // tagged with origin 'mcp'.
+  const result = await client.registerAgent(buildMcpAgentRegistration())
 
   const creds: StoredCredentials = {
     apiKey: result.apiKey,
