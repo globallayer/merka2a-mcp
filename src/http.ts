@@ -3,7 +3,40 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import { randomUUID } from 'node:crypto'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js'
+import { Merka2aClient } from '@merk.a2a/sdk'
 import { createServer } from './server.js'
+import { DEFAULT_API_URL } from './client-factory.js'
+
+// This is the multi-session HTTP transport: credentials must never be shared
+// via the container-wide ~/.merka2a file (see auth.ts). Each session
+// auto-registers its own buyer agent instead.
+process.env.MERKA2A_EPHEMERAL_AUTH = '1'
+
+/**
+ * Operator-facing auth health. A stale/invalid MERKA2A_API_KEY once silently
+ * 401'd the whole buy-path (F9); this makes the state visible on /health.
+ * Probed once at startup.
+ */
+type AuthHealth = 'auto-register' | 'env-key-valid' | 'env-key-invalid-fallback' | 'unknown'
+let authHealth: AuthHealth = 'unknown'
+
+async function probeAuthHealth(): Promise<void> {
+  const envKey = process.env.MERKA2A_API_KEY
+  if (!envKey) {
+    // No configured key → each session auto-registers a buyer agent.
+    authHealth = 'auto-register'
+    return
+  }
+  const client = new Merka2aClient({ baseUrl: process.env.MERKA2A_API_URL ?? DEFAULT_API_URL })
+  client.setApiKey(envKey)
+  try {
+    await client.getMe()
+    authHealth = 'env-key-valid'
+  } catch {
+    authHealth = 'env-key-invalid-fallback'
+    console.error('[merka2a-mcp-http] Configured MERKA2A_API_KEY is INVALID — sessions will auto-register instead')
+  }
+}
 
 /**
  * Streamable HTTP entry point for the Merka2a MCP server.
@@ -117,6 +150,7 @@ const httpServer = createHttpServer((req, res) => {
           transport: 'streamable-http',
           endpoint: MCP_PATH,
           sessions: transports.size,
+          auth: authHealth,
         })
         return
       }
@@ -147,4 +181,6 @@ const httpServer = createHttpServer((req, res) => {
 
 httpServer.listen(PORT, () => {
   console.error(`[merka2a-mcp-http] Streamable HTTP MCP server listening on :${PORT}${MCP_PATH}`)
+  // Fire-and-forget: report configured-key validity on /health without blocking boot.
+  probeAuthHealth().catch(() => { authHealth = 'unknown' })
 })

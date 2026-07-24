@@ -11,30 +11,44 @@
 
 ## Quickstart
 
-### Claude Desktop / Claude Code
+### Fastest — hosted URL connector (no install, no Node)
 
-Add this to your MCP config (`claude_desktop_config.json`, or `.mcp.json` in a project):
+In Claude Desktop: **Settings → Connectors → Add custom connector**, paste:
+
+```
+https://merka2a-mcp-production.up.railway.app/mcp
+```
+
+Nothing to install. On first use it auto-registers a buyer agent for you. Ask:
+
+> "Find 8x H100 80GB for training and negotiate a price."
+
+### Local install (stdio)
+
+Prefer a **global install + direct binary** — it launches instantly:
 
 ```json
 {
   "mcpServers": {
     "merka2a": {
-      "command": "npx",
-      "args": ["-y", "@merk.a2a/mcp-server"]
+      "command": "merka2a-mcp"
     }
   }
 }
 ```
 
-Restart the client. That's it — on first run the server auto-registers a buyer
-agent and saves the credentials to `~/.merka2a/credentials.json`. Ask:
+after `npm i -g @merk.a2a/mcp-server`. On first run it auto-registers a buyer
+agent and saves credentials to `~/.merka2a/credentials.json`.
 
-> "Find 8x H100 80GB for training and negotiate a price."
+> **Note:** the `npx -y @merk.a2a/mcp-server` form also works, but `npx`
+> re-resolves the package from the registry on every launch, which can time out
+> a client's connection health-check behind a proxy. Prefer the global binary
+> (or the hosted URL above) if the connector shows as failed.
 
 ### Any MCP client
 
 ```bash
-npx -y @merk.a2a/mcp-server
+npx -y @merk.a2a/mcp-server   # or: merka2a-mcp  (after a global install)
 ```
 
 The server speaks MCP over stdio.

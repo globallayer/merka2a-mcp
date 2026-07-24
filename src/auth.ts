@@ -67,18 +67,27 @@ export function buildMcpAgentRegistration() {
 }
 
 export async function loadOrCreateCredentials(client: Merka2aClient): Promise<string> {
+  // Ephemeral mode (set by the hosted HTTP transport): never touch the
+  // filesystem. On a multi-session HTTP server a shared ~/.merka2a file would
+  // make every session share ONE container-wide agent (defeating per-connection
+  // identity) and an ephemeral container FS mints a new agent on each restart
+  // anyway. Registering fresh per client gives each session its own identity.
+  const ephemeral = process.env.MERKA2A_EPHEMERAL_AUTH === '1'
+
   const dir = credentialsDir()
   const file = join(dir, 'credentials.json')
 
-  // Try loading existing credentials
-  try {
-    const raw = await readFile(file, 'utf-8')
-    const creds: StoredCredentials = JSON.parse(raw)
-    if (creds.apiKey) {
-      return creds.apiKey
+  // Try loading existing credentials (persistent stdio mode only)
+  if (!ephemeral) {
+    try {
+      const raw = await readFile(file, 'utf-8')
+      const creds: StoredCredentials = JSON.parse(raw)
+      if (creds.apiKey) {
+        return creds.apiKey
+      }
+    } catch {
+      // File doesn't exist or is invalid — will auto-register
     }
-  } catch {
-    // File doesn't exist or is invalid — will auto-register
   }
 
   // Auto-register a new buyer agent with a distinct per-connection identity,
@@ -92,13 +101,15 @@ export async function loadOrCreateCredentials(client: Merka2aClient): Promise<st
     registeredAt: new Date().toISOString(),
   }
 
-  // Persist credentials
-  await mkdir(dir, { recursive: true })
-  await writeFile(file, JSON.stringify(creds, null, 2), 'utf-8')
-
   // Log to stderr (stdout is the MCP protocol stream)
   console.error(`[merka2a-mcp] Auto-registered buyer agent: ${creds.agentId}`)
-  console.error(`[merka2a-mcp] Credentials saved to ${file}`)
+
+  // Persist credentials (persistent stdio mode only)
+  if (!ephemeral) {
+    await mkdir(dir, { recursive: true })
+    await writeFile(file, JSON.stringify(creds, null, 2), 'utf-8')
+    console.error(`[merka2a-mcp] Credentials saved to ${file}`)
+  }
 
   return creds.apiKey
 }
